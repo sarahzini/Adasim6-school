@@ -1,0 +1,1 @@
+# Adasim6-school

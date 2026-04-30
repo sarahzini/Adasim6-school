@@ -13,7 +13,8 @@ function TripRegistration() {
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent page reload
 
-    // --- FRONTEND VALIDATION ---
+    // FRONTEND VALIDATION
+
     // 1. Check ID: Only numbers, between 8 and 10 digits
     const idRegex = /^[0-9]{8,10}$/;
     if (!idRegex.test(id)) {
@@ -27,12 +28,11 @@ function TripRegistration() {
       setMessage("Error: Full Name must contain only letters and spaces.");
       return; // Stop the function here
     }
-    // ---------------------------
-    
+   
     // Prepare the data matching the backend schemas
     const payload = role === 'pupils' 
-      ? { PupilID: id, PupilFullName: fullName, PupilClass: parseInt(classNum) }
-      : { TeacherID: id, TeacherFullName: fullName, TeacherClass: parseInt(classNum) };
+      ? { ID: id, FullName: fullName, PupilClass: parseInt(classNum) }
+      : { ID: id, FullName: fullName, TeacherClass: parseInt(classNum) };
 
     try {
       // Send the POST request

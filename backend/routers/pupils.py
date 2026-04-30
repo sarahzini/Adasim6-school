@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from database import get_db
 import schemas
 from utils import verify_teacher
+from utils import initialize_location
 
 # Define the router for pupil-related endpoints
 router = APIRouter(prefix="/pupils", tags=["Pupils"])
@@ -11,17 +12,31 @@ router = APIRouter(prefix="/pupils", tags=["Pupils"])
 # POST endpoint to create a new pupil
 @router.post("/")
 def create_pupil(pupil: schemas.PupilCreate, db=Depends(get_db)):
-    query = text("""
-        INSERT INTO PUPIL (PupilID, PupilFullName, PupilClass)
-        VALUES (:id, :name, :p_class)
+    query_person = text("""
+        INSERT INTO PERSON (ID, FullName, UserType)
+        VALUES (:id, :name, 'pupil')
     """)
+    query_pupil = text("""
+        INSERT INTO PUPIL (PupilID, PupilClass)
+        VALUES (:id, :p_class)
+    """)
+
     try:
-        # Execute the SQL query with the provided data
-        db.execute(query, {
-            "id": pupil.PupilID, 
-            "name": pupil.PupilFullName, 
+        # Insert into the parent table
+        db.execute(query_person, {
+            "id": pupil.ID, 
+            "name": pupil.FullName
+        })
+        
+        # Insert into the child table 
+        db.execute(query_pupil, {
+            "id": pupil.ID, 
             "p_class": pupil.PupilClass
         })
+
+        # Initialize the pupil's location in the database
+        initialize_location(pupil.ID, db)
+
         db.commit() # Save changes to the database
         return {"message": "Pupil added successfully!"}
     
@@ -41,7 +56,10 @@ def create_pupil(pupil: schemas.PupilCreate, db=Depends(get_db)):
 def get_pupil(pupil_id: str, requester_tz: str, db=Depends(get_db)):
     verify_teacher(requester_tz, db)
     
-    query = text("SELECT * FROM PUPIL WHERE PupilID = :id")
+    query = text("""SELECT p.PupilID, pe.FullName AS PupilFullName, p.PupilClass
+        FROM PUPIL p
+        JOIN PERSON pe ON p.PupilID = pe.ID
+        WHERE p.PupilID = :id""")
     result = db.execute(query, {"id": pupil_id}).mappings().first()
     
     if not result:
@@ -55,5 +73,7 @@ def get_all_pupils(requester_tz: str, db=Depends(get_db)):
     verify_teacher(requester_tz, db)
     
     # Fetch all pupils from the database
-    query = text("SELECT * FROM PUPIL")
+    query = text("""SELECT p.PupilID, pe.FullName AS PupilFullName, p.PupilClass
+        FROM PUPIL p
+        JOIN PERSON pe ON p.PupilID = pe.ID""")
     return db.execute(query).mappings().all()

@@ -1,33 +1,40 @@
--- Drop tables if they already exist to allow for easy resetting
+-- Reset everything
 DROP TABLE IF EXISTS PUPIL CASCADE;
 DROP TABLE IF EXISTS TEACHER CASCADE;
+DROP TABLE IF EXISTS PERSON CASCADE;
 
--- Create the TEACHER table first
-CREATE TABLE IF NOT EXISTS TEACHER (
-    TeacherID VARCHAR(10) NOT NULL,
-    TeacherFullName VARCHAR(30),
-    TeacherClass INT NOT NULL UNIQUE, -- UNIQUE belongs here so two teachers can't have the same class
-    PRIMARY KEY (TeacherID),
-    CONSTRAINT chk_teacher_id_format CHECK (
-        LENGTH(TeacherID) BETWEEN 8 AND 10 
-        AND TeacherID ~ '^[0-9]+$'
+-- The Mother Table: All IDs are registered here first
+CREATE TABLE PERSON (
+    ID VARCHAR(10) PRIMARY KEY,
+    FullName VARCHAR(30) NOT NULL,
+    UserType VARCHAR(10) NOT NULL CHECK (UserType IN ('pupil', 'teacher')),
+    
+    -- Global constraints to apply both on pupils and teachers
+    CONSTRAINT chk_id_format CHECK (
+        LENGTH(ID) BETWEEN 8 AND 10 
+        AND ID ~ '^[0-9]+$'
     ),
-    CONSTRAINT chk_teacher_name_letters CHECK (
-        TeacherFullName ~ '^[a-zA-Z\s]+$'
+    CONSTRAINT chk_name_letters CHECK (
+        FullName ~ '^[a-zA-Z\s]+$'
     )
 );
 
--- Then create the PUPIL table
-CREATE TABLE IF NOT EXISTS PUPIL (
-    PupilID VARCHAR(10) NOT NULL,
-    PupilFullName VARCHAR(30),
-    PupilClass INT NOT NULL, 
-    PRIMARY KEY (PupilID),
-    CONSTRAINT chk_pupil_id_format CHECK (
-        LENGTH(PupilID) BETWEEN 8 AND 10 
-        AND PupilID ~ '^[0-9]+$'
-    ),
-    CONSTRAINT chk_pupil_name_letters CHECK (
-        PupilFullName ~ '^[a-zA-Z\s]+$'
-    )
+--  The Teacher Table: Inherits ID from PERSON
+CREATE TABLE TEACHER (
+    TeacherID VARCHAR(10) PRIMARY KEY REFERENCES PERSON(ID) ON DELETE CASCADE,
+    TeacherClass INT NOT NULL UNIQUE -- Unique for teachers
+);
+
+-- The Pupil Table: Inherits ID from PERSON
+CREATE TABLE PUPIL (
+    PupilID VARCHAR(10) PRIMARY KEY REFERENCES PERSON(ID) ON DELETE CASCADE,
+    PupilClass INT NOT NULL
+);
+ 
+-- Person Location Table: Stores the latest location of each person
+CREATE TABLE IF NOT EXISTS PERSON_LOCATION (
+    ID VARCHAR(10) PRIMARY KEY REFERENCES PERSON(ID),
+    Latitude VARCHAR(10) NOT NULL, 
+    Longitude VARCHAR(10) NOT NULL, 
+    LastUpdate TIMESTAMP NOT NULL
 );

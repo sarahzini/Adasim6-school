@@ -1,0 +1,54 @@
+# -------------------------
+#to run two applications,services
+#1. PostgreSQL Database
+#2. pgAdmin
+# -------------------------
+
+services:
+  # -------------------------
+  # PostgreSQL Database
+  # -------------------------
+  db:
+    image: postgres:latest
+    container_name: PostgreSQL_DB_school
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER_SECRET}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_SECRET}
+      POSTGRES_DB: ${DB_NAME_SECRET}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_school_data:/var/lib/postgresql
+    networks:
+      - school_network
+
+  # -------------------------
+  # pgAdmin
+  # -------------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadminApp_school
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "8081:80"
+    volumes:
+      - pgadmin_school_data:/var/lib/pgadmin
+    depends_on:
+      - db
+    networks:
+      - school_network
+
+# -------------------------
+# Volumes
+# -------------------------
+volumes:
+  postgres_school_data:
+  pgadmin_school_data:
+
+
+networks:
+  school_network:
